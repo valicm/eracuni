@@ -7,6 +7,7 @@ namespace Drupal\Tests\eracuni\Kernel;
 use Drupal\eracuni\Client\EracuniException;
 use Drupal\eracuni\Entity\EracuniDocumentInterface;
 use Drupal\eracuni\Event\EracuniEvents;
+use Drupal\eracuni\Event\PayloadEvent;
 use Drupal\eracuni\Issuer;
 use Drupal\eracuni\PdfStore;
 use PHPUnit\Framework\Attributes\Group;
@@ -94,6 +95,24 @@ final class IssuerTest extends EracuniKernelTestBase {
 
     $this->assertSame(EracuniDocumentInterface::PENDING, $document->getStatus());
     $this->assertSame('test-stub-12', $document->getTransactionId(), 'It may have been made: the same id finds it.');
+  }
+
+  /**
+   * A site adds to what is sent, and the transaction id stays the module's.
+   */
+  public function testSiteMayAddToThePayload(): void {
+    $this->container->get('event_dispatcher')->addListener(EracuniEvents::PAYLOAD, static function (PayloadEvent $event): void {
+      $event->parameters['SalesInvoice']['Items'][0]['productCode'] = 'HOST';
+      $event->parameters['apiTransactionId'] = 'mine';
+    });
+    StubClient::$answers[] = ['documentID' => '60:13', 'number' => '2026-0013'];
+
+    $issuer = $this->container->get(Issuer::class);
+    $this->assertTrue($issuer->issue($issuer->owe('stub', '13', '1013'))->isIssued());
+
+    $sent = StubClient::$calls[0]['parameters'];
+    $this->assertSame('HOST', $sent['SalesInvoice']['Items'][0]['productCode']);
+    $this->assertSame('test-stub-13', $sent['apiTransactionId'], "Another id would not find a lost first attempt's invoice.");
   }
 
   /**

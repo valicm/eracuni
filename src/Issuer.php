@@ -15,6 +15,7 @@ use Drupal\eracuni\Client\EracuniException;
 use Drupal\eracuni\Entity\EracuniDocumentInterface;
 use Drupal\eracuni\Event\DocumentEvent;
 use Drupal\eracuni\Event\EracuniEvents;
+use Drupal\eracuni\Event\PayloadEvent;
 use Drupal\eracuni\Invoice\PayloadBuilder;
 use Drupal\eracuni\Source\SourceCollector;
 use Psr\Log\LoggerInterface;
@@ -212,6 +213,11 @@ final readonly class Issuer {
     try {
       $request = $this->sources->get((string) $document->get('source_type')->value)->request((string) $document->get('source_id')->value);
       $built = $this->payloadBuilder->build($request, $document->getTransactionId());
+
+      $event = new PayloadEvent($document, $request, $built['parameters']);
+      $this->eventDispatcher->dispatch($event, EracuniEvents::PAYLOAD);
+      // The id is what makes a second attempt find the first one's invoice.
+      $parameters = ['apiTransactionId' => $document->getTransactionId()] + $event->parameters;
     }
     catch (EracuniException $e) {
       return $this->fail($document, $e, EracuniDocumentInterface::FAILED);
@@ -227,7 +233,7 @@ final readonly class Issuer {
       $document->set('attempts', $document->getAttempts() + 1);
 
       try {
-        $result = $this->client->call('SalesInvoiceCreate', $built['parameters']);
+        $result = $this->client->call('SalesInvoiceCreate', $parameters);
         break;
       }
       catch (EracuniException $e) {
@@ -252,7 +258,7 @@ final readonly class Issuer {
     }
 
     $document->set('status', EracuniDocumentInterface::ISSUED);
-    $document->set('draft', ($built['parameters']['SalesInvoice']['status'] ?? '') === 'Draft');
+    $document->set('draft', ($parameters['SalesInvoice']['status'] ?? '') === 'Draft');
     $document->set('document_id', $documentId);
     $document->set('number', (string) ($result['number'] ?? ''));
     $document->set('issued', $this->time->getRequestTime());

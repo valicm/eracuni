@@ -104,8 +104,14 @@ final class SettingsForm extends ConfigFormBase {
     $form['default_kpd'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Default KPD code'),
-      '#description' => $this->t('For a line whose source names none. Empty sends none, and the document says so.'),
+      '#description' => $this->t("For a line whose source names none. Empty sends none, and the document says so. A line for a product in e-računi's catalogue takes the product's own instead."),
       '#config_target' => 'eracuni.settings:default_kpd',
+    ];
+    $form['describe_products'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Print the line's own description on a catalogue product"),
+      '#description' => $this->t("Otherwise the product's name prints. e-računi refuses the invoice for a product that does not allow changing its description."),
+      '#config_target' => 'eracuni.settings:describe_products',
     ];
     $form['alert_after_hours'] = [
       '#type' => 'number',

@@ -9,6 +9,8 @@ use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\commerce_payment\Entity\PaymentGateway;
 use Drupal\commerce_price\Price;
+use Drupal\commerce_product\Entity\Product;
+use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\eracuni\Entity\EracuniDocumentInterface;
 use Drupal\eracuni\Invoice\PayloadBuilder;
 use Drupal\eracuni\Issuer;
@@ -134,6 +136,45 @@ final class CommerceOrderSourceTest extends OrderKernelTestBase {
 
     $this->assertInstanceOf(EracuniDocumentInterface::class, $issuer->find(CommerceOrderSource::ID, (string) $order->id()));
     $this->assertSame('BankTransfer', $this->container->get(CommerceOrderSource::class)->request((string) $order->id())->methodOfPayment);
+  }
+
+  /**
+   * A line is the catalogue product its variation's field or its type maps.
+   */
+  public function testLinesCarryTheirProductCodes(): void {
+    $this->config('eracuni_commerce.settings')
+      ->set('product_code_field', 'sku')
+      ->set('product_code_by_type', ['test' => 'SRV', 'default' => 'GOODS'])
+      ->save();
+
+    $variation = ProductVariation::create([
+      'type' => 'default',
+      'sku' => 'HOST-1',
+      'price' => new Price('10', 'USD'),
+    ]);
+    $variation->save();
+    Product::create([
+      'type' => 'default',
+      'title' => 'Hosting',
+      'stores' => [$this->store->id()],
+      'variations' => [$variation],
+    ])->save();
+
+    $order = $this->order();
+    $item = OrderItem::create([
+      'type' => 'default',
+      'title' => 'Hosting, extra',
+      'purchased_entity' => $variation,
+      'quantity' => 1,
+      'unit_price' => new Price('10', 'USD'),
+    ]);
+    $item->save();
+    $order->addItem($item);
+    $order->save();
+
+    $lines = $this->container->get(CommerceOrderSource::class)->request((string) $order->id())->lines;
+    $this->assertSame('SRV', $lines[0]->productCode, 'By its type: it was bought as nothing.');
+    $this->assertSame('HOST-1', $lines[1]->productCode, "The variation's own field wins over its type.");
   }
 
   /**

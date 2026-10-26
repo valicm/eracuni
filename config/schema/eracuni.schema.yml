@@ -45,6 +45,9 @@ eracuni.settings:
     default_kpd:
       type: string
       label: 'Default KPD code'
+    describe_products:
+      type: boolean
+      label: "A catalogue product's line prints its own description"
     alert_after_hours:
       type: integer
       label: 'Hours before a missing invoice is an error'

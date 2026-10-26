@@ -10,6 +10,14 @@ namespace Drupal\eracuni\Event;
 final class EracuniEvents {
 
   /**
+   * An invoice is about to be sent to e-računi. A `PayloadEvent`.
+   *
+   * Each time it is sent, cron's retries included, with the parameters as
+   * built and checked.
+   */
+  public const string PAYLOAD = 'eracuni.document.payload';
+
+  /**
    * An invoice was issued in e-računi. A `DocumentEvent`.
    */
   public const string ISSUED = 'eracuni.document.issued';

@@ -55,13 +55,23 @@ final readonly class PayloadBuilder {
     }
 
     $defaultKpd = trim((string) ($settings->get('default_kpd') ?? ''));
+    $describeProducts = (bool) $settings->get('describe_products');
     $warnings = [];
     $items = [];
     $total = 0.0;
 
     foreach (array_values($request->lines) as $n => $line) {
-      $item = [
-        'description' => $line->description,
+      $productCode = trim((string) $line->productCode);
+      $item = [];
+      if ($productCode !== '') {
+        $item['productCode'] = $productCode;
+      }
+      // A catalogue product prints its own name. One that does not allow
+      // changing it refuses any description at all, its own name too.
+      if ($productCode === '' || $describeProducts) {
+        $item['description'] = $line->description;
+      }
+      $item += [
         'quantity' => round($line->quantity, 4),
         'unit' => $line->unit,
       ];
@@ -81,14 +91,16 @@ final readonly class PayloadBuilder {
         $item['vatTransactionType'] = $code;
       }
 
-      $kpd = $line->kpd ?? $defaultKpd;
+      // A product's own KPD code is e-računi's to add, and the line's wins
+      // over it: the site's default is for a line with neither.
+      $kpd = $line->kpd ?? ($productCode === '' ? $defaultKpd : '');
       if ($kpd !== '') {
         // As e-računi keeps it, the section letter first: L64.99.09. A code
-        // it does not know is taken as none, and a Gross invoice with a line
-        // without one is refused.
+        // it does not know is refused, and so is a Gross invoice with a line
+        // without one.
         $item['classificationCode'] = $kpd;
       }
-      else {
+      elseif ($productCode === '') {
         $warnings[] = sprintf('Line %d (%s) has no KPD code.', $n + 1, $line->description);
       }
 

@@ -34,6 +34,15 @@ eracuni_commerce.settings:
     kpd_field:
       type: string
       label: 'KPD field on the purchased entity'
+    product_code_by_type:
+      type: sequence
+      label: 'e-računi product code by type'
+      sequence:
+        type: string
+        label: 'Product code'
+    product_code_field:
+      type: string
+      label: 'e-računi product code field on the purchased entity'
     unit:
       type: string
       label: 'Unit'

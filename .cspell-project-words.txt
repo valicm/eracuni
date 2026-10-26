@@ -1,3 +1,4 @@
+catalogue
 fiscalise
 fiscalised
 fiscalises
@@ -8,6 +9,7 @@ organisation
 osijek
 računi
 računi's
+skus
 ulica
 uninvoiced
 vallic

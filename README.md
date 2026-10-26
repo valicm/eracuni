@@ -40,6 +40,8 @@ $settings['eracuni'] = [
   accountant. A business elsewhere in the EU and every buyer outside it need
   one; an invoice that needs one with none mapped is refused, not guessed.
 - **Default KPD code**: for a line its source names none for.
+- **Print the line's own description on a catalogue product**: off, and a
+  line naming a product in e-računi's catalogue prints the product's name.
 - **Alarm** after 24 hours by default: Croatian law gives two days to
   fiscalise an invoice that was not.
 
@@ -48,7 +50,8 @@ $settings['eracuni'] = [
 1. The sale records a **pending document** (`Issuer::owe()`) and queues it.
    Nothing calls e-računi inside a checkout or a payment webhook.
 2. The queue (`eracuni_issue`) asks the source for the invoice as it is now,
-   builds it (`PayloadBuilder`) and sends `SalesInvoiceCreate`.
+   builds it (`PayloadBuilder`), lets a site add to it
+   (`EracuniEvents::PAYLOAD`) and sends `SalesInvoiceCreate`.
 3. Issued: e-računi's document ID and number are on the document, and its PDF
    is queued (`eracuni_pdf`). Refused or unreachable: the reason is on it, and
    cron sends it again after 15 minutes, up to `max_attempts`.
@@ -84,6 +87,26 @@ is refused. Retail invoices are taken without one.
 The lines have to come to what was charged, within rounding, or the invoice is
 refused before it is sent.
 
+### Catalogue products
+
+A line may name a product in e-računi's catalogue (`Line::$productCode`, sent
+as `productCode`). On e-računi's demo account, 26-10-2026:
+
+- The invoice prints the product's name and its unit, whatever unit is sent.
+- Its KPD code is the product's unless the line names one, which wins. The
+  site's default KPD is not sent for such a line.
+- A product that does not allow changing its description on the invoice,
+  e-računi's default for a new one, refuses any description, its own name
+  too. So none is sent, unless the site prints its own (the setting above).
+- The line's price is always sent, so the product has to allow changing the
+  price, or the invoice is refused. So is a VAT rate other than the
+  product's, unless it allows changing that as well.
+- A code e-računi does not know is refused.
+
+`EracuniEvents::PAYLOAD` is for a field the module does not model: a
+`PayloadEvent` carries the parameters as built and checked, and a subscriber
+changes them. Nothing is checked again; the transaction id is put back.
+
 ## The PDF
 
 Fetched once after issuing (`SalesInvoiceGetPDF`) and kept in the private
@@ -105,6 +128,9 @@ issued; e-računi stays the archive of record.
   leaves them uninvoiced, the default.
 - **kpd_by_type**: a KPD code per product variation type or order item type;
   **kpd_field**: a field on the purchased entity that wins over both.
+- **product_code_by_type** and **product_code_field**: the product in
+  e-računi's catalogue a line is, the same way. A variation's `sku` is the
+  field when the catalogue uses the site's SKUs.
 
 Lines are the order items at what was charged, net of included tax. An
 order-level adjustment (a promotion, a site's own discount) is a line of its

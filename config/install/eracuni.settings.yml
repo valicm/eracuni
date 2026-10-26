@@ -22,8 +22,13 @@ vat_transaction_types:
   eu_b2c: ''
   export_b2b: ''
   export_b2c: ''
-# The KPD code of a line no source names one for. Empty sends none.
+# The KPD code of a line no source names one for. Empty sends none. A line
+# naming a catalogue product takes the product's own instead.
 default_kpd: ''
+# A line naming a product in e-računi's catalogue prints the product's name.
+# True prints the line's own description instead, which e-računi refuses for
+# a product that does not allow changing it.
+describe_products: false
 # Croatian law gives two days to fiscalise an invoice that was not. An
 # invoice still not issued this long after it was due is logged as an error
 # and announced (EracuniEvents::OVERDUE).

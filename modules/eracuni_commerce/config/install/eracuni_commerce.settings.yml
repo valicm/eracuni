@@ -16,5 +16,11 @@ without_gateway:
 # purchased entity, named here, wins over both.
 kpd_by_type: {  }
 kpd_field: ''
+# The product in e-računi's catalogue a line is, by its product code, found
+# the same way: by type, and a field naming one winning over it (a
+# variation's `sku`, say). A line with none is sent with its own title. The
+# product has to allow the invoice to change its price.
+product_code_by_type: {  }
+product_code_field: ''
 # The unit e-računi prints on every line.
 unit: kom

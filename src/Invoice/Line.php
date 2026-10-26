@@ -11,6 +11,12 @@ namespace Drupal\eracuni\Invoice;
  * charged: the gross a retail invoice prints is worked out from these, in one
  * place, so a site cannot hand over a gross that its own net and rate do not
  * add up to.
+ *
+ * A line may name a product in e-računi's catalogue. e-računi then prints
+ * the product's name and unit, and its KPD code unless the line names one,
+ * and refuses a price, a VAT rate or a description the product does not
+ * allow an invoice to change: the price is always this line's, so the
+ * product has to allow that.
  */
 final readonly class Line {
 
@@ -28,7 +34,9 @@ final readonly class Line {
    * @param string $unit
    *   The unit e-računi prints: kom, mj, h.
    * @param string|null $kpd
-   *   Its KPD code, or NULL for the site's default.
+   *   Its KPD code, or NULL for the product's or the site's default.
+   * @param string|null $productCode
+   *   The product in e-računi's catalogue it is, or NULL for none.
    */
   public function __construct(
     public string $description,
@@ -37,6 +45,7 @@ final readonly class Line {
     public float $vatRate,
     public string $unit = 'kom',
     public ?string $kpd = NULL,
+    public ?string $productCode = NULL,
   ) {}
 
   /**

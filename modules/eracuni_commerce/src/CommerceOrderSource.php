@@ -34,6 +34,9 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * items alone, so an order-level discount is taken after tax: an invoice
  * that taxed it again would not match the payment.)
  *
+ * A line is the product in e-računi's catalogue the site maps its variation
+ * or its type to, and has its KPD code the same way.
+ *
  * The buyer is the billing profile's: its address, the order's email, and
  * the profile's `tax_number` where it has one; a business when it names an
  * organisation or a tax number. `OrderInvoiceEvent` is where a site that
@@ -206,7 +209,8 @@ final readonly class CommerceOrderSource implements InvoiceSourceInterface {
         number_format($net / $quantity, 4, '.', ''),
         $rate,
         $unit,
-        $this->kpd($item),
+        $this->mapped($item, 'kpd_field', 'kpd_by_type'),
+        $this->mapped($item, 'product_code_field', 'product_code_by_type'),
       );
 
       $key = (string) $rate;
@@ -290,13 +294,23 @@ final readonly class CommerceOrderSource implements InvoiceSourceInterface {
   }
 
   /**
-   * An item's KPD code: a field on what was bought, then its type's.
+   * An item's KPD code or product code, by field and then by type.
+   *
+   * A field on what was bought, then a code for its type or the item's.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface $item
+   *   The item.
+   * @param string $fieldKey
+   *   The setting naming the field: `kpd_field`, `product_code_field`.
+   * @param string $byTypeKey
+   *   The setting with a code per type: `kpd_by_type`,
+   *   `product_code_by_type`.
    */
-  private function kpd(OrderItemInterface $item): ?string {
+  private function mapped(OrderItemInterface $item, string $fieldKey, string $byTypeKey): ?string {
     $settings = $this->configFactory->get('eracuni_commerce.settings');
     $purchased = $item->getPurchasedEntity();
 
-    $field = trim((string) ($settings->get('kpd_field') ?? ''));
+    $field = trim((string) ($settings->get($fieldKey) ?? ''));
     if ($field !== '' && $purchased instanceof FieldableEntityInterface && $purchased->hasField($field)) {
       $value = trim((string) $purchased->get($field)->value);
       if ($value !== '') {
@@ -304,7 +318,7 @@ final readonly class CommerceOrderSource implements InvoiceSourceInterface {
       }
     }
 
-    $byType = (array) ($settings->get('kpd_by_type') ?? []);
+    $byType = (array) ($settings->get($byTypeKey) ?? []);
     foreach ([$purchased?->bundle(), $item->bundle()] as $type) {
       if ($type !== NULL && trim((string) ($byType[$type] ?? '')) !== '') {
         return trim((string) $byType[$type]);
