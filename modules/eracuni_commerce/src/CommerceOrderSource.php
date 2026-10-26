@@ -18,6 +18,7 @@ use Drupal\eracuni\Invoice\InvoiceRequest;
 use Drupal\eracuni\Invoice\Line;
 use Drupal\eracuni\Source\InvoiceSourceInterface;
 use Drupal\eracuni_commerce\Event\OrderInvoiceEvent;
+use Drupal\eracuni_commerce\Event\OrderOwedEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -36,7 +37,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * The buyer is the billing profile's: its address, the order's email, and
  * the profile's `tax_number` where it has one; a business when it names an
  * organisation or a tax number. `OrderInvoiceEvent` is where a site that
- * knows better says so.
+ * knows better says so, and `OrderOwedEvent` where it says an order is not
+ * invoiced at all.
  */
 final readonly class CommerceOrderSource implements InvoiceSourceInterface {
 
@@ -103,6 +105,19 @@ final readonly class CommerceOrderSource implements InvoiceSourceInterface {
     $order = $this->entityTypeManager->getStorage('commerce_order')->load($id);
 
     return $order instanceof OrderInterface ? $order->access('view', $account, TRUE) : AccessResult::neutral();
+  }
+
+  /**
+   * Why the site does not want this order invoiced, or NULL if it does.
+   *
+   * Asked of `OrderOwedEvent`'s subscribers before an order is recorded as
+   * owed, whether by its gateway's moment or by the backfill.
+   */
+  public function declined(OrderInterface $order): ?string {
+    $event = new OrderOwedEvent($order);
+    $this->eventDispatcher->dispatch($event, OrderOwedEvent::NAME);
+
+    return $event->reason();
   }
 
   /**

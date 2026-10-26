@@ -13,6 +13,7 @@ use Drupal\eracuni\Entity\EracuniDocumentInterface;
 use Drupal\eracuni\Invoice\PayloadBuilder;
 use Drupal\eracuni\Issuer;
 use Drupal\eracuni_commerce\CommerceOrderSource;
+use Drupal\eracuni_commerce\Event\OrderOwedEvent;
 use Drupal\profile\Entity\Profile;
 use Drupal\Tests\commerce_order\Kernel\OrderKernelTestBase;
 use PHPUnit\Framework\Attributes\Group;
@@ -133,6 +134,33 @@ final class CommerceOrderSourceTest extends OrderKernelTestBase {
 
     $this->assertInstanceOf(EracuniDocumentInterface::class, $issuer->find(CommerceOrderSource::ID, (string) $order->id()));
     $this->assertSame('BankTransfer', $this->container->get(CommerceOrderSource::class)->request((string) $order->id())->methodOfPayment);
+  }
+
+  /**
+   * An order the site declines is never owed, and says why.
+   */
+  public function testSiteMayDeclineAnOrder(): void {
+    $this->container->get('event_dispatcher')->addListener(OrderOwedEvent::NAME, static function (OrderOwedEvent $event): void {
+      if ($event->order->getEmail() === 'own@example.com') {
+        $event->decline('One of our own accounts.');
+      }
+    });
+
+    $own = $this->order();
+    $own->setEmail('own@example.com');
+    $own->getState()->applyTransitionById('place');
+    $own->save();
+
+    $issuer = $this->container->get(Issuer::class);
+    $source = $this->container->get(CommerceOrderSource::class);
+    $this->assertNull($issuer->find(CommerceOrderSource::ID, (string) $own->id()), 'Declined, so not owed.');
+    $this->assertSame('One of our own accounts.', $source->declined($own));
+
+    $sale = $this->order();
+    $sale->getState()->applyTransitionById('place');
+    $sale->save();
+    $this->assertInstanceOf(EracuniDocumentInterface::class, $issuer->find(CommerceOrderSource::ID, (string) $sale->id()), 'Anybody else is.');
+    $this->assertNull($source->declined($sale));
   }
 
   /**

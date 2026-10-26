@@ -12,5 +12,6 @@ services:
       - '@Drupal\eracuni\Issuer'
       - '@Drupal\eracuni_commerce\CommerceOrderSource'
       - '@datetime.time'
+      - '@logger.channel.eracuni'
     tags:
       - { name: event_subscriber }

@@ -11,6 +11,7 @@ use Drupal\commerce_order\Event\OrderEvents;
 use Drupal\eracuni\Issuer;
 use Drupal\eracuni_commerce\CommerceOrderSource;
 use Drupal\state_machine\Event\WorkflowTransitionEvent;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -26,6 +27,7 @@ final readonly class OrderSubscriber implements EventSubscriberInterface {
     private Issuer $issuer,
     private CommerceOrderSource $source,
     private TimeInterface $time,
+    private LoggerInterface $logger,
   ) {}
 
   /**
@@ -62,13 +64,24 @@ final readonly class OrderSubscriber implements EventSubscriberInterface {
    * Records the order as owed, if its gateway is invoiced at this moment.
    *
    * An order that comes to nothing is not invoiced: there is nothing to
-   * fiscalise.
+   * fiscalise. Nor is one the site declines, which is logged, so an order
+   * without an invoice can be told from one whose invoice went missing.
    */
   private function owe(OrderInterface $order, string $moment): void {
     $gateway = $this->source->gatewaySettings($order);
     $total = $order->getTotalPrice();
 
     if ($gateway === NULL || $gateway['issue_on'] !== $moment || $total === NULL || $total->isZero()) {
+      return;
+    }
+
+    $declined = $this->source->declined($order);
+    if ($declined !== NULL) {
+      $this->logger->info('Order @order is not invoiced: @reason', [
+        '@order' => $order->getOrderNumber() ?: $order->id(),
+        '@reason' => $declined,
+      ]);
+
       return;
     }
 

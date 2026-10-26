@@ -158,7 +158,7 @@ final class PayloadBuilderTest extends UnitTestCase {
       }
     }
 
-    $time = $this->createMock(TimeInterface::class);
+    $time = $this->createStub(TimeInterface::class);
     $time->method('getRequestTime')->willReturn(1793000000);
 
     return new PayloadBuilder($this->getConfigFactoryStub(['eracuni.settings' => $flat]), $time);

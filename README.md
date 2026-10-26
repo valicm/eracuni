@@ -112,6 +112,12 @@ own, split across the items' rates by their gross, so the invoice comes to
 exactly what was paid. `OrderInvoiceEvent` lets a site correct the request:
 whether the buyer is a business, a due date it keeps.
 
+`OrderOwedEvent` (`eracuni_commerce.order_owed`) comes first, before an order
+is recorded as owed: a site calls `decline()` with a reason for an order that
+is not a sale, such as one of its own accounts, or the order a subscription
+billed in arrears was bought on. No document is made, the reason is logged,
+and the backfill lists it as not invoiced.
+
 `drush eracuni:commerce:backfill --dry-run` lists orders of the last 48 hours
 that should have an invoice and have no document.
 

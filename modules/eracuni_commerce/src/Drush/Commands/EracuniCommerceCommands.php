@@ -71,6 +71,14 @@ final class EracuniCommerceCommands extends DrushCommands {
         continue;
       }
 
+      // Said rather than left out, so the list accounts for every order
+      // that looks owed an invoice.
+      $declined = $this->source->declined($order);
+      if ($declined !== NULL) {
+        $this->io()->text(sprintf('%s not invoiced: %s', $order->getOrderNumber() ?: $order->id(), $declined));
+        continue;
+      }
+
       $owed++;
       $this->io()->text(sprintf('%s placed %s', $order->getOrderNumber() ?: $order->id(), date('Y-m-d H:i', (int) $order->getPlacedTime())));
       if (!$options['dry-run']) {

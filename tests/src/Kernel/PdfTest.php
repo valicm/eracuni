@@ -129,7 +129,7 @@ final class PdfTest extends EracuniKernelTestBase {
    * An account with the given id, an admin of e-računi or not.
    */
   private function account(int $id, bool $admin = FALSE): AccountInterface {
-    $account = $this->createMock(AccountInterface::class);
+    $account = $this->createStub(AccountInterface::class);
     $account->method('id')->willReturn($id);
     $account->method('hasPermission')->willReturnCallback(static fn (string $permission): bool => $admin && $permission === 'administer eracuni');
 
