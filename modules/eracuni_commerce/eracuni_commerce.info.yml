@@ -1,0 +1,10 @@
+name: 'e-računi for Commerce'
+type: module
+description: 'Issues the e-računi invoice for a Commerce order when it is paid, or when it is placed for a gateway that is paid later.'
+package: e-računi
+core_version_requirement: ^11.1 || ^12
+php: 8.4
+dependencies:
+  - eracuni:eracuni
+  - commerce:commerce_order
+  - commerce:commerce_payment

@@ -1,0 +1,4 @@
+administer eracuni:
+  title: 'Administer e-računi'
+  description: 'Set how invoices are issued in e-računi, and see every one asked for.'
+  restrict access: true

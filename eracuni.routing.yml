@@ -1,0 +1,30 @@
+eracuni.settings:
+  path: '/admin/config/services/eracuni'
+  defaults:
+    _form: '\Drupal\eracuni\Form\SettingsForm'
+    _title: 'e-računi'
+  requirements:
+    _permission: 'administer eracuni'
+
+entity.eracuni_document.collection:
+  path: '/admin/config/services/eracuni/documents'
+  defaults:
+    _entity_list: 'eracuni_document'
+    _title: 'e-računi documents'
+  requirements:
+    _permission: 'administer eracuni'
+
+# The invoice's PDF, for whoever may see what it invoices.
+eracuni.document.pdf:
+  path: '/eracuni/invoice/{eracuni_document}/pdf'
+  defaults:
+    _controller: '\Drupal\eracuni\Controller\PdfController::download'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\eracuni\Controller\PdfController::access'
+    eracuni_document: '\d+'
+  options:
+    no_cache: TRUE
+    parameters:
+      eracuni_document:
+        type: 'entity:eracuni_document'

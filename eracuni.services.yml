@@ -1,0 +1,40 @@
+services:
+  logger.channel.eracuni:
+    parent: logger.channel_base
+    arguments: ['eracuni']
+
+  Drupal\eracuni\Client\EracuniClientInterface:
+    class: Drupal\eracuni\Client\EracuniClient
+    arguments:
+      - '@http_client'
+      - '@logger.channel.eracuni'
+      - '@settings'
+
+  Drupal\eracuni\Invoice\PayloadBuilder:
+    arguments:
+      - '@config.factory'
+      - '@datetime.time'
+
+  # Every service tagged eracuni.source, by its id.
+  Drupal\eracuni\Source\SourceCollector:
+    tags:
+      - { name: service_collector, tag: eracuni.source, call: addSource }
+
+  Drupal\eracuni\Issuer:
+    arguments:
+      - '@entity_type.manager'
+      - '@Drupal\eracuni\Client\EracuniClientInterface'
+      - '@Drupal\eracuni\Invoice\PayloadBuilder'
+      - '@Drupal\eracuni\Source\SourceCollector'
+      - '@queue'
+      - '@lock'
+      - '@config.factory'
+      - '@datetime.time'
+      - '@event_dispatcher'
+      - '@logger.channel.eracuni'
+
+  Drupal\eracuni\PdfStore:
+    arguments:
+      - '@Drupal\eracuni\Client\EracuniClientInterface'
+      - '@file.repository'
+      - '@file_system'

@@ -1,0 +1,5 @@
+eracuni.settings:
+  title: 'e-računi'
+  description: 'How invoices are issued in e-računi.'
+  route_name: eracuni.settings
+  parent: system.admin_config_services

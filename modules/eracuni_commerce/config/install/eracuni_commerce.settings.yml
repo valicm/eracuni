@@ -1,0 +1,20 @@
+# Per payment gateway: e-računi's method of payment, and when its orders are
+# invoiced. "paid" when Commerce marks the order paid (a card); "placed" when
+# the order is placed (bank transfer, invoice terms), the payment recorded
+# later. A gateway not listed is not invoiced at all.
+#
+# gateways:
+#   stripe: { method: Stripe, issue_on: paid }
+#   bank: { method: BankTransfer, issue_on: placed }
+gateways: {  }
+# The same for an order placed with no gateway at all: one a site bills on
+# invoice terms itself. An empty method leaves those orders uninvoiced.
+without_gateway:
+  method: ''
+  issue_on: placed
+# KPD code by product variation type, then by order item type. A field on the
+# purchased entity, named here, wins over both.
+kpd_by_type: {  }
+kpd_field: ''
+# The unit e-računi prints on every line.
+unit: kom

@@ -1,0 +1,33 @@
+# The business unit invoices are issued in. A fiscalised one for invoices
+# paid by card: e-računi fiscalises those itself, on creation.
+business_unit: ''
+# Put in front of every order reference, so two sites issuing into one
+# e-računi account never share one, and a lookup by reference finds only
+# this site's invoice.
+reference_prefix: ''
+# IssuedInvoice in production. Draft on a test account, where nothing is
+# numbered or fiscalised.
+status: IssuedInvoice
+# e-računi mails the issued invoice to the buyer, as its Stripe connector did.
+send_by_email: true
+document_language: Croatian
+seller_country: HR
+# The VAT transaction type e-računi needs for each treatment. Empty for the
+# domestic ones; a treatment that needs one and has none is refused, not
+# guessed: an invoice cannot be unsent.
+vat_transaction_types:
+  domestic_b2b: ''
+  domestic_b2c: ''
+  eu_b2b: ''
+  eu_b2c: ''
+  export_b2b: ''
+  export_b2c: ''
+# The KPD code of a line no source names one for. Empty sends none.
+default_kpd: ''
+# Croatian law gives two days to fiscalise an invoice that was not. An
+# invoice still not issued this long after it was due is logged as an error
+# and announced (EracuniEvents::OVERDUE).
+alert_after_hours: 24
+# How often a failed invoice is tried again on cron before only the alarm is
+# left.
+max_attempts: 5

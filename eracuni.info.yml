@@ -1,0 +1,11 @@
+name: 'e-računi'
+type: module
+description: 'Invoices issued in e-računi through its API: the client, the document each invoice is, the rules that shape it, and an alarm when one is late.'
+package: e-računi
+core_version_requirement: ^11.1 || ^12
+php: 8.4
+configure: eracuni.settings
+dependencies:
+  - drupal:system
+  - drupal:file
+  - drupal:options

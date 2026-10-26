@@ -1,0 +1,18 @@
+{
+    "name": "drupal/eracuni",
+    "description": "Invoices issued in e-računi through its API, from Commerce orders or any other source of sales.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://www.drupal.org/project/eracuni",
+    "require": {
+        "php": ">=8.4"
+    },
+    "require-dev": {
+        "drupal/commerce": "^3",
+        "drush/drush": "^13 || ^14"
+    },
+    "suggest": {
+        "drupal/commerce": "To invoice Commerce orders (e-računi for Commerce).",
+        "drush/drush": "To check the credentials, issue and retry invoices with drush eracuni:status, eracuni:issue and eracuni:retry."
+    }
+}

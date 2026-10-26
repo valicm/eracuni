@@ -1,0 +1,53 @@
+eracuni.settings:
+  type: config_object
+  label: 'e-računi settings'
+  mapping:
+    business_unit:
+      type: string
+      label: 'Business unit'
+    reference_prefix:
+      type: string
+      label: 'Order reference prefix'
+    status:
+      type: string
+      label: 'Status of a created invoice'
+    send_by_email:
+      type: boolean
+      label: 'e-računi mails the issued invoice'
+    document_language:
+      type: string
+      label: 'Document language'
+    seller_country:
+      type: string
+      label: 'Seller country'
+    vat_transaction_types:
+      type: mapping
+      label: 'VAT transaction type per treatment'
+      mapping:
+        domestic_b2b:
+          type: string
+          label: 'Domestic, business'
+        domestic_b2c:
+          type: string
+          label: 'Domestic, consumer'
+        eu_b2b:
+          type: string
+          label: 'EU, business with a VAT id'
+        eu_b2c:
+          type: string
+          label: 'EU, consumer'
+        export_b2b:
+          type: string
+          label: 'Outside the EU, business'
+        export_b2c:
+          type: string
+          label: 'Outside the EU, consumer'
+    default_kpd:
+      type: string
+      label: 'Default KPD code'
+    alert_after_hours:
+      type: integer
+      label: 'Hours before a missing invoice is an error'
+    max_attempts:
+      type: integer
+      label: 'Attempts before only the alarm is left'

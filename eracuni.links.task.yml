@@ -1,0 +1,9 @@
+eracuni.settings:
+  title: 'Settings'
+  route_name: eracuni.settings
+  base_route: eracuni.settings
+
+entity.eracuni_document.collection:
+  title: 'Documents'
+  route_name: entity.eracuni_document.collection
+  base_route: eracuni.settings

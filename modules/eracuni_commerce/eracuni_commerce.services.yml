@@ -1,0 +1,16 @@
+services:
+  Drupal\eracuni_commerce\CommerceOrderSource:
+    arguments:
+      - '@entity_type.manager'
+      - '@config.factory'
+      - '@event_dispatcher'
+    tags:
+      - { name: eracuni.source }
+
+  Drupal\eracuni_commerce\EventSubscriber\OrderSubscriber:
+    arguments:
+      - '@Drupal\eracuni\Issuer'
+      - '@Drupal\eracuni_commerce\CommerceOrderSource'
+      - '@datetime.time'
+    tags:
+      - { name: event_subscriber }

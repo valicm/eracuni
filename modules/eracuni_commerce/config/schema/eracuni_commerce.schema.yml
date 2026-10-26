@@ -1,0 +1,39 @@
+eracuni_commerce.settings:
+  type: config_object
+  label: 'e-računi for Commerce settings'
+  mapping:
+    gateways:
+      type: sequence
+      label: 'Payment gateways'
+      sequence:
+        type: mapping
+        label: 'Gateway'
+        mapping:
+          method:
+            type: string
+            label: 'e-računi method of payment'
+          issue_on:
+            type: string
+            label: 'Invoiced when (paid, placed)'
+    without_gateway:
+      type: mapping
+      label: 'Orders with no gateway'
+      mapping:
+        method:
+          type: string
+          label: 'e-računi method of payment'
+        issue_on:
+          type: string
+          label: 'Invoiced when (paid, placed)'
+    kpd_by_type:
+      type: sequence
+      label: 'KPD code by type'
+      sequence:
+        type: string
+        label: 'KPD code'
+    kpd_field:
+      type: string
+      label: 'KPD field on the purchased entity'
+    unit:
+      type: string
+      label: 'Unit'
