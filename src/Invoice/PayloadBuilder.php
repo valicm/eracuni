@@ -53,6 +53,12 @@ final readonly class PayloadBuilder {
     if ($request->lines === []) {
       throw EracuniException::data(sprintf('%s has no lines to invoice.', $request->reference));
     }
+    // e-računi takes no invoice without a city. A consumer's address is not
+    // needed on it, and a payment provider often collects only the country,
+    // so a retail invoice says none; a business invoice needs the address.
+    if (!$treatment->isRetail() && trim($request->buyer->city) === '') {
+      throw EracuniException::data(sprintf("%s: the buyer is a business and has no city; a business invoice needs the buyer's address.", $request->reference));
+    }
 
     $defaultKpd = trim((string) ($settings->get('default_kpd') ?? ''));
     $describeProducts = (bool) $settings->get('describe_products');
@@ -130,8 +136,8 @@ final readonly class PayloadBuilder {
       'orderReference' => $this->reference($request),
       'buyerName' => $request->buyer->name,
       'buyerStreet' => $request->buyer->street !== '' ? $request->buyer->street : '-',
-      'buyerPostalCode' => $request->buyer->postalCode,
-      'buyerCity' => $request->buyer->city,
+      'buyerPostalCode' => trim($request->buyer->postalCode) !== '' ? $request->buyer->postalCode : '-',
+      'buyerCity' => trim($request->buyer->city) !== '' ? $request->buyer->city : '-',
       'buyerCountry' => strtoupper($request->buyer->countryCode),
       'buyerEMail' => $request->buyer->email,
       'Items' => $items,

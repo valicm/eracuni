@@ -151,14 +151,31 @@ final class PayloadBuilderTest extends UnitTestCase {
   }
 
   /**
+   * A consumer without an address is invoiced; a business is not.
+   *
+   * An invoice without a city is refused by e-računi, and a consumer's
+   * address is not needed on one.
+   */
+  public function testBuyerWithoutAddress(): void {
+    $invoice = $this->builder()->build($this->request('HR', FALSE, '', '125.00', address: FALSE), 'txn')['parameters']['SalesInvoice'];
+    $this->assertSame(['-', '-', '-'], [$invoice['buyerStreet'], $invoice['buyerPostalCode'], $invoice['buyerCity']]);
+
+    $this->expectException(EracuniException::class);
+    $this->expectExceptionMessage('has no city');
+    $this->builder()->build($this->request('DE', TRUE, '123456789', '100.00', 0.0, address: FALSE), 'txn');
+  }
+
+  /**
    * One request, net 100 a month for the given buyer.
    */
-  private function request(string $country, bool $business, string $taxId, string $total, float $rate = 25.0, ?string $productCode = NULL, ?string $kpd = NULL): InvoiceRequest {
+  private function request(string $country, bool $business, string $taxId, string $total, float $rate = 25.0, ?string $productCode = NULL, ?string $kpd = NULL, bool $address = TRUE): InvoiceRequest {
     return new InvoiceRequest(
       'commerce_order',
       '7',
       '1007',
-      new Buyer('Ana Kovač', 'Ulica 1', '31000', 'Osijek', $country, 'ana@example.com', $business, $taxId),
+      $address
+        ? new Buyer('Ana Kovač', 'Ulica 1', '31000', 'Osijek', $country, 'ana@example.com', $business, $taxId)
+        : new Buyer('Ana Kovač', '', '', '', $country, 'ana@example.com', $business, $taxId),
       [new Line('Hosting, October', 1.0, '100.00', $rate, 'mj', $kpd, $productCode)],
       'EUR',
       'Stripe',

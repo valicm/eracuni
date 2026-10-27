@@ -87,6 +87,11 @@ is refused. Retail invoices are taken without one.
 The lines have to come to what was charged, within rounding, or the invoice is
 refused before it is sent.
 
+e-računi takes no invoice without the buyer's street, postal code and city. A
+retail invoice says `-` for any its source does not have: a consumer's address
+is not needed on one, and a payment provider often collects only the country.
+A business invoice without a city is refused before it is sent.
+
 ### Catalogue products
 
 A line may name a product in e-računi's catalogue (`Line::$productCode`, sent
