@@ -112,6 +112,53 @@ final class PayloadBuilderTest extends UnitTestCase {
   }
 
   /**
+   * A business invoice comes to what was charged, to the cent.
+   *
+   * Order 121's lines: VAT rounded line by line charged 223.78, and e-računi,
+   * which works VAT out on the net total, made the draft 223.75. One line's
+   * net unit price takes the difference, and says so.
+   */
+  public function testBusinessInvoiceComesToWhatWasCharged(): void {
+    $lines = [];
+    $order = [
+      [1, '24'], [2, '24'], [1, '24'], [1, '24'], [1, '24'],
+      [1, '3.5'], [1, '5.5'], [1, '5.5'], [1, '5.5'], [1, '5.5'], [1, '5.5'],
+      [1, '0'], [1, '4'],
+    ];
+    foreach ($order as [$quantity, $net]) {
+      $lines[] = new Line('Line', (float) $quantity, $net, 25.0);
+    }
+    $buyer = new Buyer('Vallic d.o.o.', 'Ulica 1', '31000', 'Osijek', 'HR', 'billing@example.com', TRUE, '12345678903');
+    $request = new InvoiceRequest('commerce_order', '152', '121', $buyer, $lines, 'EUR', 'BankTransfer', '223.78', '2026-10-28');
+
+    $built = $this->builder()->build($request, 'txn');
+    $items = $built['parameters']['SalesInvoice']['Items'];
+
+    $net = 0.0;
+    $changed = [];
+    foreach ($items as $n => $item) {
+      $net += round($item['quantity'] * $item['netPrice'], 2);
+      if ((float) $item['netPrice'] !== (float) $lines[$n]->netUnitPrice) {
+        $changed[] = $n;
+      }
+    }
+    $this->assertSame('223.78', number_format(round($net, 2) + round($net * 0.25, 2), 2, '.', ''), 'The invoice as e-računi adds it up.');
+    $this->assertCount(1, $changed, 'One line takes the difference.');
+    $this->assertSame(1, $changed[0], 'The largest line: two machines.');
+    $this->assertStringContainsString('comes to 223.78 as charged', implode(' ', $built['warnings']));
+  }
+
+  /**
+   * A total that already agrees is sent as it is.
+   */
+  public function testAgreeingTotalIsLeftAlone(): void {
+    $built = $this->builder()->build($this->request('HR', TRUE, '12345678903', '125.00'), 'txn');
+
+    $this->assertSame(100.0, $built['parameters']['SalesInvoice']['Items'][0]['netPrice']);
+    $this->assertStringNotContainsString('as charged', implode(' ', $built['warnings']));
+  }
+
+  /**
    * A domestic line at 0% and a line with no KPD code are warned of.
    */
   public function testDoubtfulLinesAreWarnedOf(): void {
