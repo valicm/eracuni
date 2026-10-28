@@ -20,10 +20,18 @@ $settings['eracuni'] = [
   'token' => '…',
   // Optional: the Croatian instance otherwise.
   'endpoint' => 'https://e-racuni.com/WebServicesHR/API',
+  // Optional: log every request's parameters and e-računi's answer.
+  'log_traffic' => TRUE,
 ];
 ```
 
 `drush eracuni:status` proves them with a lookup that finds nothing.
+
+`log_traffic` writes each call to the `eracuni` log channel at debug level:
+the method and its parameters, then the HTTP status and e-računi's answer,
+each cut at 16 KB. The credentials are never in it, but the invoice is, with
+its buyer's name, address and tax id: for a test account, or for a while
+when an answer needs reading, not left on.
 
 ## Settings
 

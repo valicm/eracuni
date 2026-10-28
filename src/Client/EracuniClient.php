@@ -22,6 +22,8 @@ use Psr\Log\LoggerInterface;
  *   'token' => '…',
  *   // The Croatian instance unless a site says otherwise.
  *   'endpoint' => 'https://e-racuni.com/WebServicesHR/API',
+ *   // Logs each request's parameters and e-računi's answer, at debug level.
+ *   'log_traffic' => FALSE,
  * ];
  * @endcode
  *
@@ -48,6 +50,11 @@ final readonly class EracuniClient implements EracuniClientInterface {
    * answered as an empty result rather than a refusal.
    */
   private const string NOTHING_FOUND = '#noDocumentsFound';
+
+  /**
+   * How much of a request or an answer is logged: a PDF comes as base64.
+   */
+  private const int LOGGED_LENGTH = 16384;
 
   /**
    * How a pause is taken: sleep(), or nothing at all in a test.
@@ -93,6 +100,14 @@ final readonly class EracuniClient implements EracuniClientInterface {
       'parameters' => (object) $parameters,
     ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
+    $logTraffic = $this->logsTraffic();
+    if ($logTraffic) {
+      $this->logger->debug('e-računi @method sent: @parameters', [
+        '@method' => $method,
+        '@parameters' => $this->clip(json_encode((object) $parameters, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE)),
+      ]);
+    }
+
     $attempt = 0;
     while (TRUE) {
       $attempt++;
@@ -113,6 +128,13 @@ final readonly class EracuniClient implements EracuniClientInterface {
 
       $status = $response->getStatusCode();
       $raw = (string) $response->getBody();
+      if ($logTraffic) {
+        $this->logger->debug('e-računi @method answered HTTP @status: @answer', [
+          '@method' => $method,
+          '@status' => $status,
+          '@answer' => $this->clip($raw),
+        ]);
+      }
 
       if (($status === 429 || $this->isBusy($raw)) && $attempt < self::ATTEMPTS) {
         $this->logger->notice('e-računi was busy on @method; waiting before attempt @n.', [
@@ -170,6 +192,31 @@ final readonly class EracuniClient implements EracuniClientInterface {
   private function isBusy(string $raw): bool {
     return str_contains($raw, 'Another web request is currently being processed')
       || str_contains($raw, 'Concurrent usage of atomic API operations');
+  }
+
+  /**
+   * Whether requests and answers are logged.
+   *
+   * Off unless settings.php says so: an invoice carries its buyer's name,
+   * address and tax id. The credentials are never logged; they travel beside
+   * the parameters, not in them.
+   */
+  private function logsTraffic(): bool {
+    $set = $this->settings->get('eracuni', []);
+
+    return is_array($set) && !empty($set['log_traffic']);
+  }
+
+  /**
+   * A logged text, cut to LOGGED_LENGTH.
+   */
+  private function clip(string|false $text): string {
+    $text = (string) $text;
+    if (strlen($text) <= self::LOGGED_LENGTH) {
+      return $text;
+    }
+
+    return mb_strcut($text, 0, self::LOGGED_LENGTH) . sprintf('… (%d bytes in all)', strlen($text));
   }
 
   /**
